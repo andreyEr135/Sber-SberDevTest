@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# --- Проверка аргументов ---
+# Проверяем, что передано ровно 3 аргумента ($# - количество аргументов)
+if [ "$#" -ne 3 ]; then
+    echo "Ошибка: Неверное количество аргументов."
+    echo "Использование: sudo $0 <SN> <UUID> <MAC>"
+    exit 1
+fi
+
+# Присваиваем значения переменным
+SN="$1"
+UUID="$2"
+MAC="$3"
+
+# --- Переход в директорию скрипта ---
+SCRIPT_DIR="$(dirname "$0")"
+if ! cd "$SCRIPT_DIR"; then
+    echo "Ошибка: Не удалось перейти в директорию скрипта: $SCRIPT_DIR"
+    exit 1
+fi
+
+res=0
+
+sudo ./firmware_mac $MAC
+if [ $? -ne 0 ]; then
+    echo "Ошибка при выполнении firmare_mac"
+    res=1
+fi
+
+sudo ./firmware_bios_info $SN $UUID
+if [ $? -ne 0 ]; then
+    echo "Ошибка при выполнении firmware_bios_info"
+    res=1
+fi
+
+if [ "$res" -eq 0 ]; then
+    echo "Все операции выполнены успешно."
+else
+    echo "Внимание: Одна или несколько операций завершились с ошибкой."
+fi
+
+exit "$res"

@@ -1,0 +1,7 @@
+#ifndef _versionH
+#define _versionH
+#include "version.h"
+TVERSION VERSION __attribute__((section("tVERSION"))) =
+{"Sensor",{0,1},165,2769150004U,1766430032UL};
+#endif
+

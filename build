@@ -1,0 +1,44 @@
+#!/bin/bash
+
+cd $(dirname $0)
+
+DEVICE=$(basename $(dirname $(readlink ./bin)))
+
+echo "====================="
+echo "      "$DEVICE
+echo "====================="
+
+cat ./sberdevtest/Device.cmake
+
+MAKE_THREADS_COUNT=`nproc`
+
+echo ""
+echo "BUILD DXUTIL..."
+cd ./sberutils
+mkdir -p ./build
+cd ./build
+cmake ..
+#cmake .. -DCMAKE_SYSTEM_NAME=Linux    # for crosscompiling
+make -j$MAKE_THREADS_COUNT
+MAKE_RETURN=$?
+if [ $MAKE_RETURN -ne 0 ] ; then
+    echo "MAKE_RETURN $MAKE_RETURN"
+    exit $MAKE_RETURN
+fi
+cd ../..
+
+echo ""
+echo "BUILD SBERDEVTEST..."
+cd ./sberdevtest
+mkdir -p ./build
+cd ./build
+cmake ..
+#cmake .. -DCMAKE_SYSTEM_NAME=Linux    # for crosscompiling
+make -j$MAKE_THREADS_COUNT
+MAKE_RETURN=$?
+if [ $MAKE_RETURN -ne 0 ] ; then
+    echo "MAKE_RETURN $MAKE_RETURN"
+    exit $MAKE_RETURN
+fi
+cd ../..
+

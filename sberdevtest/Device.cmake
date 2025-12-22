@@ -1,0 +1,1 @@
+../devices/pc/tests.cmake

@@ -1,0 +1,7 @@
+#ifndef _versionH
+#define _versionH
+#include "version.h"
+TVERSION VERSION __attribute__((section("tVERSION"))) =
+{"SberDevTest",{2,0},210,648121961U,1766431672UL};
+#endif
+

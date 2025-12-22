@@ -1,0 +1,7 @@
+#ifndef _versionH
+#define _versionH
+#include "version.h"
+TVERSION VERSION __attribute__((section("tVERSION"))) =
+{"Test HDD",{0,1},224,3240020644U,1766429953UL};
+#endif
+

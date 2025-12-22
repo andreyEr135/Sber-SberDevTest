@@ -1,0 +1,6 @@
+devscan.cpp
+devscan_pci.cpp
+libpci.cpp
+devscan_usb.cpp
+devscan_blk.cpp
+devscan_net.cpp

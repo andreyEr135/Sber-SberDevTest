@@ -1,0 +1,7 @@
+#ifndef _versionH
+#define _versionH
+#include "version.h"
+TVERSION VERSION __attribute__((section("tVERSION"))) =
+{"Test Sound",{0,1},26,4094029675U,1766429749UL};
+#endif
+

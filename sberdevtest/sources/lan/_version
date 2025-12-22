@@ -1,0 +1,7 @@
+#ifndef _versionH
+#define _versionH
+#include "version.h"
+TVERSION VERSION __attribute__((section("tVERSION"))) =
+{"Test LAN",{0,2},77,1316750249U,1766349974UL};
+#endif
+

@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# --- Константы ---
+WMI_PATH="/sys/bus/wmi/devices/4A13FB3E-9CEA-43AA-86AB-D2E5193B0EA0"
+USER="admin"
+PASSWD="password"
+DRIVER_NAME="sdbmu_wmi"
+
+# --- Проверка прав суперпользователя ---
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Ошибка: Этот скрипт должен быть запущен от имени суперпользователя (root)."
+    echo "Пожалуйста, запустите его с 'sudo $0 <SN> <UUID>'"
+    exit 1
+fi
+
+# --- Проверка аргументов ---
+# Проверяем, что передано ровно 2 аргумента ($# - количество аргументов)
+if [ "$#" -ne 2 ]; then
+    echo "Ошибка: Неверное количество аргументов."
+    echo "Использование: sudo $0 <SN> <UUID>"
+    exit 1
+fi
+
+# Присваиваем значения переменным
+SN="$1"
+UUID="$2"
+
+# --- Проверка загруженного драйвера ---
+# lsmod выводит список модулей, grep ищет нужный. -q подавляет вывод текста.
+if ! lsmod | grep -q "$DRIVER_NAME"; then
+    echo "Ошибка: Драйвер '$DRIVER_NAME' не загружен."
+    echo "Попробуйте загрузить его командой: sudo modprobe $DRIVER_NAME"
+    exit 1
+fi
+
+# --- Переход в директорию скрипта ---
+SCRIPT_DIR="$(dirname "$0")"
+if ! cd "$SCRIPT_DIR"; then
+    echo "Ошибка: Не удалось перейти в директорию скрипта: $SCRIPT_DIR"
+    exit 1
+fi
+
+# --- Проверка наличия директории WMI ---
+if [ ! -d "$WMI_PATH" ]; then
+    echo "Ошибка: Директория WMI не найдена: $WMI_PATH"
+    echo "Возможно, устройство не поддерживается или драйвер работает некорректно."
+    exit 1
+fi
+
+# --- Проверка наличия необходимых файлов в директории ---
+# Массив файлов для проверки
+REQUIRED_FILES=("config_mode" "Serial" "UUID")
+
+for FILE in "${REQUIRED_FILES[@]}"; do
+    if [ ! -f "$WMI_PATH/$FILE" ]; then
+        echo "Ошибка: Файл '$FILE' не найден в директории $WMI_PATH"
+        exit 1
+    fi
+done
+
+# --- Информационное сообщение ---
+echo "Запуск скрипта для SN: $SN и UUID: $UUID"
+
+echo -ne "Start,${USER}${PASSWD}" > $WMI_PATH/config_mode
+echo -ne $SN > $WMI_PATH/Serial
+echo -ne $UUID > $WMI_PATH/UUID
+echo -ne "End,${USER}${PASSWD}" > $WMI_PATH/config_mode
+exit 0

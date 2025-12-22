@@ -1,0 +1,7 @@
+#ifndef _versionH
+#define _versionH
+#include "version.h"
+TVERSION VERSION __attribute__((section("tVERSION"))) =
+{"Test Video",{0,1},257,3891766253U,1765389629UL};
+#endif
+

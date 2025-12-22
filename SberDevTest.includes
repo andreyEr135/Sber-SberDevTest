@@ -1,0 +1,8 @@
+sberdevtest/sources/cpu
+sberdevtest/sources/devscan
+sberdevtest/sources/lan
+sberdevtest/sources/mem
+sberdevtest/sources/sberdevtest
+sberdevtest/sources/scan_dev
+sberdevtest/sources/sensorself
+sberutils/include

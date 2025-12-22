@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# dd if=/dev/sda7 of=iotestfile bs=1M count=100 conv=fdatasync
+# direct (iflag=direct для чтения, oflag=direct для записи) dd проверяет лишь линейную скорость
+
+# Lists Linux block devices and for each one the controller
+# it is connected to.
+
+set -o pipefail
+
+for i in /sys/block/sd*; do
+    # Find the path that contains the PCI ID of the controller.
+    link=$(readlink $i)
+    # Assume that the PCI ID of the controller is the path part
+    # right before the /host... part.
+
+    #dx=$(echo $link | sed -e 's,/host.*,,')
+    #echo $dx
+
+    parts=($(echo $link | sed -e 's,/host.*,,' | tr "/" "\n"))
+
+    #echo ${parts[1]}
+    # The PCI ID of the controller should now be the last item
+    # in the array.
+    pciid=${parts[-1]}
+    # Get the device description from the PCI ID.
+    ctrl=$(lspci -s $pciid 2>/dev/null | sed -e 's/.*: //')
+    # Print the result if lspci suceeeded (it doesn't for a block
+    # device connected to USB).
+    test $? -eq 0 && echo $i: $ctrl
+done

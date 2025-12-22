@@ -1,0 +1,25 @@
+#!/bin/bash
+
+cd $(dirname $0)
+
+if [ -d ./sberutils/build ]; then
+    cd ./sberutils/build
+    [ -f ./Makefile ] && make clean
+    rm -rf *
+    cd ../..
+    rm -r ./sberutils/build
+fi
+
+if [ -d ./sberdevtest/build ]; then
+    cd ./sberdevtest/build
+    [ -f ./Makefile ] && make clean
+    rm -rf *
+    cd ../..
+    rm -r ./sberdevtest/build
+fi
+
+find . -type f -name '*~' -delete
+find . -type f -name '*.log' -delete
+
+find . -type f -name 'Makefile' -exec sh -c 'cd $(pwd)/$(dirname {}) && make clean' \;
+#find . -type f -name 'Makefile' -exec sh -c 'echo $(pwd)/$(dirname {}) && cd $(pwd)/$(dirname {}) && make clean' \;

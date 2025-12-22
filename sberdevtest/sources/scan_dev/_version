@@ -1,0 +1,7 @@
+#ifndef _versionH
+#define _versionH
+#include "version.h"
+TVERSION VERSION __attribute__((section("tVERSION"))) =
+{"Scan devices",{0,1},48,3514361035U,1480006559UL};
+#endif
+

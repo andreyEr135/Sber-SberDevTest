@@ -1,0 +1,132 @@
+#!/bin/bash
+
+# --- Константы ---
+DEVSCAN_PATH="/opt/SberDevTest/bin/devscan"
+MAX_RETRIES=15 # Увеличено количество попыток
+RETRY_DELAY=2  # Увеличена задержка между попытками в секундах
+
+# --- Проверка прав суперпользователя ---
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Ошибка: Этот скрипт должен быть запущен от имени суперпользователя (root)."
+    echo "Пожалуйста, запустите его с 'sudo bash $0 <MAC-адрес>' или 'sudo ./firmware_mac <MAC-адрес>'."
+    exit 1
+fi
+
+# --- Переход в директорию скрипта ---
+SCRIPT_DIR="$(dirname "$0")"
+if ! cd "$SCRIPT_DIR"; then
+    echo "Ошибка: Не удалось перейти в директорию скрипта: $SCRIPT_DIR"
+    exit 1
+fi
+
+# --- Проверка наличия аргумента MAC-адреса ---
+if [ -z "$1" ]; then
+    echo "Ошибка: MAC-адрес не указан."
+    echo "Использование: $0 <MAC-адрес>"
+    echo "Пример: $0 00:11:22:33:44:55"
+    exit 1
+fi
+
+MAC_ADDRESS_INPUT="$1" # Переименовал для ясности, что это входной MAC
+MAC_ADDRESS_INPUT_LOWER=$(echo "$MAC_ADDRESS_INPUT" | tr '[:upper:]' '[:lower:]') # Приводим к нижнему регистру для сравнения
+
+# --- Проверка формата MAC-адреса ---
+if ! [[ "$MAC_ADDRESS_INPUT" =~ ^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$ ]]; then
+    echo "Ошибка: Некорректный формат MAC-адреса. Ожидается XX:XX:XX:XX:XX:XX"
+    echo "Вы ввели: $MAC_ADDRESS_INPUT"
+    exit 1
+fi
+
+# --- Проверка наличия файла модуля r8125.ko ---
+MODULE_PATH="./r8125.ko"
+if [ ! -f "$MODULE_PATH" ]; then
+    echo "Ошибка: Файл модуля $MODULE_PATH не найден в текущей директории ($SCRIPT_DIR)."
+    echo "Пожалуйста, убедитесь, что драйвер r8125.ko скомпилирован и находится здесь."
+    exit 1
+fi
+
+# --- Выгрузка конкурирующего модуля r8169 (если загружен) ---
+if lsmod | grep -q r8169; then
+    if ! rmmod r8169; then
+        echo "Предупреждение: Не удалось выгрузить модуль r8169. Возможно, он используется."
+        echo "Это может привести к конфликтам. Попробуйте отключить сетевой интерфейс, использующий r8169, перед запуском скрипта."
+	exit 1
+    fi
+fi
+
+# --- Проверка, не загружен ли r8125 уже ---
+if lsmod | grep -q r8125; then
+    if ! rmmod r8125; then
+        echo "Ошибка: Не удалось выгрузить уже загруженный модуль r8125. Он может быть занят."
+        exit 1
+    fi
+fi
+
+# --- Загрузка модуля r8125 с указанным MAC-адресом ---
+if ! insmod "$MODULE_PATH" set_mac="$MAC_ADDRESS_INPUT"; then
+    echo "Ошибка: Не удалось загрузить модуль r8125.ko."
+    echo "Возможные причины: неверный путь к модулю, проблемы совместимости с ядром, ошибки в модуле."
+    echo "Проверьте логи ядра (dmesg) для более детальной информации."
+    exit 1
+fi
+
+# --- Обновление зависимостей модулей ---
+depmod -a || echo "Предупреждение: Не удалось обновить зависимости модулей (depmod -a)."
+
+# --- Поиск сетевого интерфейса, использующего драйвер r8125, и проверка MAC-адреса ---
+R8125_INTERFACE=""
+FOUND_INTERFACE=false
+
+for (( i=1; i<=MAX_RETRIES; i++ )); do
+    if [ -x "$DEVSCAN_PATH" ]; then
+        # Если devscan доступен, используем его
+        DEVSCAN_OUTPUT=$("$DEVSCAN_PATH" net 2>/dev/null)
+        R8125_INTERFACE=$(echo "$DEVSCAN_OUTPUT" | grep '\[r8125\]' | awk '{print $3}' | sed 's/{ether}//' | tr -d '[:space:]')
+    fi
+
+    # Если devscan не нашел или его нет, пытаемся найти по MAC-адресу
+    if [ -z "$R8125_INTERFACE" ]; then
+        echo "  (devscan не нашел или недоступен. Поиск по MAC-адресу как запасной вариант...)"
+        for IFACE in $(ip -o link show | awk -F': ' '{print $2}'); do
+            if [ "$IFACE" == "lo" ]; then continue; fi # Пропускаем lo
+            CURRENT_MAC=$(ip link show "$IFACE" | awk '/ether/{print $2}' | tr '[:upper:]' '[:lower:]')
+            if [ -n "$CURRENT_MAC" ] && [ "$CURRENT_MAC" == "$MAC_ADDRESS_INPUT_LOWER" ]; then
+                R8125_INTERFACE="$IFACE"
+                break
+            fi
+        done
+    fi
+
+    if [ -n "$R8125_INTERFACE" ]; then
+        FOUND_INTERFACE=true
+        break # Выход из цикла повторных попыток
+    fi
+
+    sleep "$RETRY_DELAY"
+done
+
+if [ "$FOUND_INTERFACE" == "false" ]; then
+    echo "Ошибка: Не удалось найти сетевой интерфейс, использующий драйвер r8125 или заданный MAC-адрес после загрузки модуля."
+    echo "Проверьте 'ip link show', 'dmesg' и работу '$DEVSCAN_PATH'."
+    exit 1
+fi
+
+# --- Проверка MAC-адреса найденного интерфейса ---
+CURRENT_MAC=$(ip link show "$R8125_INTERFACE" | awk '/ether/{print $2}' | tr '[:upper:]' '[:lower:]')
+
+if [ -z "$CURRENT_MAC" ]; then
+    echo "Ошибка: Не удалось получить MAC-адрес для интерфейса $R8125_INTERFACE."
+    exit 1
+fi
+
+if [ "$CURRENT_MAC" == "$MAC_ADDRESS_INPUT_LOWER" ]; then
+    echo "УСПЕХ: MAC-адрес $R8125_INTERFACE обновлен $MAC_ADDRESS_INPUT."
+    exit 0
+else
+    echo "ПРЕДУПРЕЖДЕНИЕ: MAC-адрес интерфейса $R8125_INTERFACE НЕ СОВПАДАЕТ с заданным."
+    echo "  Задано: $MAC_ADDRESS_INPUT"
+    echo "  Получено: $CURRENT_MAC"
+    echo "Возможно, драйвер не принял параметр MAC-адреса или его переопределил сетевой менеджер."
+    exit 1
+fi
+

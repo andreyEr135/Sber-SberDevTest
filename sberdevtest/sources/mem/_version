@@ -1,0 +1,7 @@
+#ifndef _versionH
+#define _versionH
+#include "version.h"
+TVERSION VERSION __attribute__((section("tVERSION"))) =
+{"Test MEM",{0,1},45,2221322116U,1766431398UL};
+#endif
+

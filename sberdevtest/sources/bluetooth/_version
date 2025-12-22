@@ -1,0 +1,7 @@
+#ifndef _versionH
+#define _versionH
+#include "version.h"
+TVERSION VERSION __attribute__((section("tVERSION"))) =
+{"Test bluetooth",{0,1},31,1795898315U,1765393312UL};
+#endif
+

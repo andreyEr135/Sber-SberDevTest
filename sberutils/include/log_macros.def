@@ -1,0 +1,28 @@
+#undef Log
+#undef Info
+#undef Warning
+#undef Trace
+#undef Debug
+#undef Error
+#undef ERRNO
+#undef XXX
+#undef FUNCTION_TRACE
+
+#define Log(ARGS...)     g_DebugSystem.logmessage(DebugSystem::tLOG,UNIT,__FILE__,__LINE__,__func__,##ARGS)
+#define Info(ARGS...)    g_DebugSystem.logmessage(DebugSystem::tINFO,UNIT,__FILE__,__LINE__,__func__,##ARGS)
+#define Warning(ARGS...) g_DebugSystem.logmessage(DebugSystem::tWARNING,UNIT,__FILE__,__LINE__,__func__,##ARGS)
+#define Trace(ARGS...)   do{if(g_DebugSystem.trace)g_DebugSystem.logmessage(DebugSystem::tTRACE,UNIT,__FILE__,__LINE__,__func__,##ARGS);}while(0)
+#define Debug(ARGS...)   do{if(UNIT.debug)g_DebugSystem.logmessage(DebugSystem::tDEBUG,UNIT,__FILE__,__LINE__,__func__,##ARGS);}while(0)
+#define Error(ARGS...)   g_DebugSystem.logmessage(DebugSystem::tERROR,UNIT,__FILE__,__LINE__,__func__,##ARGS)
+#define ERRNO            g_DebugSystem.logmessage(DebugSystem::tERRNO,UNIT,__FILE__,__LINE__,__func__,NULL);
+#define XXX              g_DebugSystem.logmessage(DebugSystem::tXXX,UNIT,__FILE__,__LINE__,__func__,NULL);
+#define FUNCTION_TRACE   TDebugVar __dxDebugVar(UNIT,__FILE__,__LINE__,__func__,NULL);
+#define DTHRD(ARGS...)   TDebugVar __dxDebugVar(UNIT,__FILE__,__LINE__,__func__,##ARGS);
+
+#define TraceD(x)    Trace( #x " = %d\n", x )
+#define TraceS(x)    Trace( #x " = [%s]\n", x )
+#define TraceX(x)    Trace( #x " = %X\n", x )
+#define DebugD(x)    Debug( #x " = %d\n", x )
+#define DebugS(x)    Debug( #x " = [%s]\n", x )
+#define DebugX(x)    Debug( #x " = %X\n", x )
+

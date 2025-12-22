@@ -1,0 +1,3 @@
+echo "<UI>sleep $1s"
+sleep $1s
+echo "TEST OK"
