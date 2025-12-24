@@ -13,7 +13,7 @@ cat ./sberdevtest/Device.cmake
 MAKE_THREADS_COUNT=`nproc`
 
 echo ""
-echo "BUILD DXUTIL..."
+echo "BUILD SBERUTILS..."
 cd ./sberutils
 mkdir -p ./build
 cd ./build

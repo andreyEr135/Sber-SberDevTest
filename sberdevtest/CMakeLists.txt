@@ -25,9 +25,9 @@ include( ${PROJECT_SOURCE_DIR}/../scripts/_macros.cmake )
 
 set( VERSION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/version )
 
-set( DXUTIL_DIR ${PROJECT_SOURCE_DIR}/../sberutils )
+set( SBERUTILS_DIR ${PROJECT_SOURCE_DIR}/../sberutils )
 
-include_directories( ${PROJECT_SOURCE_DIR}/include ${DXUTIL_DIR}/include )
+include_directories( ${PROJECT_SOURCE_DIR}/include ${SBERUTILS_DIR}/include )
 
 link_directories( ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
 
@@ -39,10 +39,7 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pipe -Wall" )
 set( X SBERDEVTEST )
 if( ${X} )
 	EXECUTABLE( ${X} sources/sberdevtest )
-	#LIBRARIES ( ${X} rt dxutil pthread :libpanelw.so.5 :libncursesw.so.5 )
-	#LIBRARIES ( ${X} rt dxutil pthread :libpanelw.so.5 :libncursesw.so.5 tinfo )
 	LIBRARIES ( ${X} rt sberutils pthread panelw ncursesw tinfo )
-	#LIBRARIES ( ${X} rt dxutil pthread panelw ncursesw )
 	DXVERSION ( ${X} )
 	STRIP     ( ${X} )
 	ROOT      ( ${X} )

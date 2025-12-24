@@ -46,7 +46,6 @@ if( ${SBERUTILS} )
 	if (NOT CMAKE_CROSSCOMPILING)
 		# Yocto build system complains about stripped libraries (it strips them itself).
 		# Hence, for cross-compiling (assuming Yocto) we don't strip the lib.
-		#add_custom_command( TARGET ${DXUTIL_NAME} POST_BUILD COMMAND ${CMAKE_STRIP} lib${DXUTIL_NAME}.so.${DXUTIL_VERSION} WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} )
 		add_custom_command( TARGET ${SBERUTILS_NAME} POST_BUILD COMMAND ${CMAKE_STRIP} lib${SBERUTILS_NAME}.so WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} )
 	endif ()
 endif( ${SBERUTILS} )
