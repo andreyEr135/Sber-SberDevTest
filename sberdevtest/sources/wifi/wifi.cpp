@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "debugsystem.h"
+#include <sys/stat.h>
 
 #include "_version"
 
@@ -37,6 +38,42 @@ bool findWifi (const string& wifiDevice )
 
     // Устройство с таким именем и типом 'wifi' не найдено.
     return false;
+}
+
+std::string findWifiDeviceFirst(std::string nameDevice) {
+    const char* netPath = "/sys/class/net";
+    DIR* dir = opendir(netPath);
+
+    if (!dir) {
+        return nameDevice; // Не удалось открыть /sys, возвращаем что было
+    }
+
+    struct dirent* entry;
+    std::string foundDevice = "";
+
+    while ((entry = readdir(dir)) != nullptr) {
+        std::string interfaceName = entry->d_name;
+
+        // Пропускаем мета-директории
+        if (interfaceName == "." || interfaceName == "..") {
+            continue;
+        }
+
+        // Проверяем наличие папки 'wireless' или 'phy80211' внутри интерфейса
+        // Это стандартный признак WiFi устройства в Linux
+        std::string wirelessPath = std::string(netPath) + "/" + interfaceName + "/wireless";
+        std::string phyPath = std::string(netPath) + "/" + interfaceName + "/phy80211";
+
+        struct stat st;
+        if (stat(wirelessPath.c_str(), &st) == 0 || stat(phyPath.c_str(), &st) == 0) {
+            foundDevice = interfaceName;
+            break; // Нашли первое устройство, выходим из цикла
+        }
+    }
+
+    closedir(dir);
+
+    return foundDevice;
 }
 
 bool connectToWifi (const string& ssid, const string& passwd )
@@ -153,6 +190,13 @@ void Test( )
     }
 
     if ( (ssid.empty()) || (passwd.empty()) || (nameDevice.empty()) ) throw errException( "Не указаны ssid/пароль сети или название устройства" );
+    if (nameDevice == "find")
+    {
+        nameDevice = findWifiDeviceFirst(nameDevice);
+        if (nameDevice.empty()) throw errException( "Адаптеры отсутствуют в системе", nameDevice.c_str() );
+        errno = 0;
+    }
+
     Log("<UI> Проверка наличия сетевого адаптера %s...\n", nameDevice.c_str());
     if (!findWifi (nameDevice)) throw errException( "Адаптер %s отсутствует", nameDevice.c_str() );
     Log("<UI> Проверка подключения к сети %s...\n", ssid.c_str());

@@ -214,10 +214,23 @@ int main( int argc, char **argv )
     BackPanel->show( );
     HelloPanel->m_selectionPanel->IdentifyHardware();
 
-    if ((HelloPanel->m_selectionPanel->m_serialNumber.empty()) || (HelloPanel->m_selectionPanel->m_uuid.empty())) ProgramPanel->ShowPanel();
+    std::string serial = HelloPanel->m_selectionPanel->m_serialNumber;
+    std::string uuid = HelloPanel->m_selectionPanel->m_uuid;
+
+
+    /*if ((HelloPanel->m_selectionPanel->m_serialNumber.empty()) || (HelloPanel->m_selectionPanel->m_uuid.empty())) ProgramPanel->ShowPanel();
     else {
         HelloPanel->ShowPanel( );
         std::string sendMsg = stringformat("#sn#%s#", HelloPanel->m_selectionPanel->m_serialNumber.c_str());
+        Tcp->sendData(sendMsg.c_str(), sendMsg.length());
+    }*/
+    // Проверяем: пустота ИЛИ "Default string" в серийнике ИЛИ пустота в UUID
+    if (serial.empty() || serial == "Default string" || uuid.empty()) {
+        ProgramPanel->ShowPanel();
+    }
+    else {
+        HelloPanel->ShowPanel();
+        std::string sendMsg = stringformat("#sn#%s#", serial.c_str());
         Tcp->sendData(sendMsg.c_str(), sendMsg.length());
     }
 

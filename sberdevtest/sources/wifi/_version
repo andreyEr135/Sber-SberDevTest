@@ -2,6 +2,6 @@
 #define _versionH
 #include "version.h"
 TVERSION VERSION __attribute__((section("tVERSION"))) =
-{"Test wifi",{0,1},36,1685532051U,1766326887UL};
+{"Test wifi",{0,1},42,1812894652U,1770916143UL};
 #endif
 

@@ -15,7 +15,7 @@ using namespace std;
 
 //-------------------------------------------------------------------------------------------
 
-bool findVideoPort( const string& port )
+/*bool findVideoPort( const string& port )
 {
     string path = stringformat("/sys/class/drm/%s", port.c_str());
     if (!direxist( path )) throw errException("Порт %s не найден в системе", port.c_str());
@@ -24,6 +24,64 @@ bool findVideoPort( const string& port )
     Trace("%s\n", status.c_str());
     if ((status.empty()) || (trim(status) == "disabled")) throw errException("Статус порта %s неизвестен или выключен", port.c_str());
     return true;
+}*/
+
+bool findVideoPort(const std::string& prefix)
+{
+    std::string drmPath = "/sys/class/drm";
+
+    // Проверяем существование базовой директории DRM
+    if (!direxist(drmPath)) {
+        throw errException("Директория DRM (%s) не найдена в системе.", drmPath.c_str());
+    }
+
+    DIR* dir = opendir(drmPath.c_str());
+    if (!dir) {
+        throw errException("Не удалось открыть директорию %s для сканирования.", drmPath.c_str());
+    }
+
+    struct dirent* entry;
+    std::vector<std::string> matchingPorts;
+
+    // Шаг 1: Сканируем директорию /sys/class/drm и ищем подходящие имена
+    while ((entry = readdir(dir)) != nullptr) {
+        std::string portName = entry->d_name;
+        // Проверяем, начинается ли имя порта с заданного префикса
+        if (portName.rfind(prefix, 0) == 0) { // rfind(prefix, 0) проверяет начало строки
+            matchingPorts.push_back(portName);
+        }
+    }
+    closedir(dir);
+
+    // Если ни одного порта, соответствующего префиксу, не найдено
+    if (matchingPorts.empty()) {
+        throw errException("Видеопорты, соответствующие маске '%s*', не найдены в системе.", prefix.c_str());
+    }
+
+    // Шаг 2: Проверяем статус каждого найденного порта
+    for (const std::string& portName : matchingPorts) {
+        std::string portPath = drmPath + "/" + portName;
+        std::string enabledFilePath = portPath + "/enabled";
+
+        // Проверяем существование файла статуса
+        if (!fileexist(enabledFilePath)) {
+            Trace("Предупреждение: для порта %s не найден статусный файл '%s'. Пропускаем.\n",
+                  portName.c_str(), enabledFilePath.c_str());
+            continue; // Пропускаем этот порт, если нет файла "enabled"
+        }
+
+        std::string status = readfilestr(enabledFilePath);
+        Trace("Порт %s, статус: '%s'\n", portName.c_str(), status.c_str());
+
+        // Проверяем статус: если не пустой и не "disabled" (после обрезки пробелов)
+        if (!status.empty() && trim(status) != "disabled") {
+            Trace("Сигнал обнаружен на порту: %s\n", portName.c_str());
+            return true; // Нашли активный порт, возвращаем true
+        }
+    }
+
+    // Если дошли сюда, значит, ни один из подходящих портов не активен
+    throw errException("Статус порта %s неизвестен или выключен", prefix.c_str());
 }
 
 //-------------------------------------------------------------------------------------------
