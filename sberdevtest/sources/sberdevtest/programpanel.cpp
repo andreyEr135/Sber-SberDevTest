@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cctype> // Для isxdigit
 #include "debugsystem.h"
 #include "main.h"
 #include "test.h"
@@ -119,9 +120,40 @@ bool TDeviceFirmwarePanel::event( int inputKey, char* scanCodes )
     return true;
 }
 
+
+
+
 //===========================================================================================
 // Функции обработки событий
 //===========================================================================================
+
+std::string getAndCheckUuid(const std::string uuid)
+{
+    std::string res = "";
+    res.reserve(32);
+
+    for (char c : uuid) {
+        if (c == '-') {
+            continue; // Пропускаем дефисы
+        }
+
+        // Проверяем, является ли символ шестнадцатеричной цифрой
+        // isxdigit возвращает не 0, если c это 0-9, a-f или A-F
+        if (std::isxdigit(static_cast<unsigned char>(c))) {
+            res += c;
+        } else {
+            // Если попался любой другой символ (G, H, P, R, пробел и т.д.)
+            return "";
+        }
+    }
+
+    // Проверяем, что накопилось ровно 32 символа
+    if (res.length() == 32) {
+        return res;
+    } else {
+        return "";
+    }
+}
 
 /**
  * @brief Нажатие на кнопку "Настроить"
@@ -131,11 +163,12 @@ void OnFirmwareApplyClick( TUIButton* btn )
     FUNCTION_TRACE
     string serial = ProgramPanel->m_inputPanel->m_serialEdit->text;
     string uuid   = ProgramPanel->m_inputPanel->m_uuidEdit->text;
+    uuid = getAndCheckUuid(uuid);
     string mac    = ProgramPanel->m_inputPanel->m_macEdit->text;
 
     if (serial.empty() || uuid.empty() || mac.empty())
     {
-        DialogPanel->ShowMessage( UIRED, "60,9{}{Укажите серийный номер, UUID, MAC-адрес!}{Ok}{Ok}", &OnPressOkDialogBtn );
+        DialogPanel->ShowMessage( UIRED, "100,9{}{Укажите корректно серийный номер, UUID, MAC-адрес!}{Ok}{Ok}", &OnPressOkDialogBtn );
     }
     else
     {
@@ -156,6 +189,7 @@ void OnFirmwareConfirmDialog( TUIButton* btn )
     {
         string serial = ProgramPanel->m_inputPanel->m_serialEdit->text;
         string uuid   = ProgramPanel->m_inputPanel->m_uuidEdit->text;
+        uuid = getAndCheckUuid(uuid);
         string mac    = ProgramPanel->m_inputPanel->m_macEdit->text;
 
         BackPanel->StatusLabel->text = "Идет прошивка, ожидайте...";
