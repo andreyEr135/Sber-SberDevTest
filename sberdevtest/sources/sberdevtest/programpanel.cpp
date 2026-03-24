@@ -218,11 +218,13 @@ void OnFirmwareConfirmDialog( TUIButton* btn )
 void OnFirmwareSuccessDialog( TUIButton* btn )
 {
     DialogPanel->Close();
+    HelloPanel->m_selectionPanel->m_serialNumber = ProgramPanel->m_inputPanel->m_serialEdit->text;
     ProgramPanel->HidePanel();
 
     // Возвращаемся в приветственную панель и обновляем данные о железе
     HelloPanel->ShowPanel();
-    HelloPanel->m_selectionPanel->IdentifyHardware();
+    //HelloPanel->m_selectionPanel->IdentifyHardware();
+
 
     // Отправляем новый серийный номер по сети
     std::string serial = HelloPanel->m_selectionPanel->m_serialNumber;
