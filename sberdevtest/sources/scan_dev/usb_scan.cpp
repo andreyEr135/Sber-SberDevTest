@@ -33,7 +33,7 @@ bool UsbScanner::isKnownDevice( TFindUsb& usb)
         if (kvp == vidpid) return true;
     }
     for (const auto& kd : knownDrivers) {
-        if (kd == driver) return true;
+        if (driver.find(kd)) return true; //(kd == driver) return true;
     }
     return false;
 }
